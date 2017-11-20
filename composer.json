@@ -1,5 +1,5 @@
 {
-    "name": "gpibarra/webDriverPHP",
+    "name": "gpibarra/webdriver-php",
     "description": "Web Driver PHP based in Seleium & ChromeDriver",
     "keywords": ["php", "selenium", "facebook", "webdriver", "chrome", "chromedriver"],
     "license": "MIT",
