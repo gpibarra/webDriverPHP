@@ -164,7 +164,7 @@ class WebDriver {
             unlink($pathSelenium);
         }
         //ChromeDriver
-        if (!file_exists($pathChrome)) {
+        if (file_exists($pathChrome)) {
             unlink($pathChrome);
         }
     }
