@@ -1,0 +1,15 @@
+{
+    "name": "gpibarra/webDriverPHP",
+    "description": "Web Driver PHP based in Seleium & ChromeDriver",
+    "keywords": ["php", "selenium", "facebook", "webdriver", "chrome", "chromedriver"],
+    "license": "MIT",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "gpibarra\\webDriverPHP\\": "src/"
+        }
+    },
+    "require": {
+        "facebook/webdriver": "^1.5"
+    }
+}
