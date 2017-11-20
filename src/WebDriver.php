@@ -104,6 +104,10 @@ class WebDriver {
         }
         //Selenium
         if (!file_exists($pathSelenium)) {
+            $files = glob(substr($pathSelenium,5) . '*');
+            foreach ($files as $file) {
+                unlink($file);
+            }
             echo "Descargando Selenium ($pathSelenium)\n";
             $content = file_get_contents(self::$seleniumGET);
             file_put_contents($pathSelenium, $content);
@@ -113,6 +117,10 @@ class WebDriver {
         }
         //ChromeDriver
         if (!file_exists($pathChrome)) {
+            $files = glob(substr($pathChrome,5) . '*');
+            foreach ($files as $file) {
+                unlink($file);
+            }
             $blInstall = false;
             $tmpURLChrome = "";
             $tmpFileZipChrome = "";
@@ -160,6 +168,7 @@ class WebDriver {
 
     public static function deleteFiles($folder, $pathSelenium, $pathChrome) {
         //Selenium
+        /*
         if (file_exists($pathSelenium)) {
             unlink($pathSelenium);
         }
@@ -167,10 +176,33 @@ class WebDriver {
         if (file_exists($pathChrome)) {
             unlink($pathChrome);
         }
+        */
+        self::deleteDir($folder);
     }
 
+    public static function deleteDir($dirPath) {
+        if (! file_exists($dirPath)) {
+            return;
+        }
+        if (! is_dir($dirPath)) {
+            throw new InvalidArgumentException("$dirPath must be a directory");
+        }
+        if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+            $dirPath .= '/';
+        }
+        $files = glob($dirPath . '*', GLOB_MARK);
+        foreach ($files as $file) {
+            if (is_dir($file)) {
+                self::deleteDir($file);
+            } else {
+                unlink($file);
+            }
+        }
+        rmdir($dirPath);
+    }
 
     public static function updateServer() {
+        self::stopServer();
         $pathBin = __DIR__.'/../storage/webdrivers';
         $pathSelenium = $pathBin."/".self::$seleniumJavaBin;
         if (self::isWindows()) {
