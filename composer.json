@@ -18,11 +18,11 @@
                 "gpibarra\\WebDriverPHP\\WebDriverServiceProvider"
             ]
         }
-    }
+    },
     "scripts": {
         "post-install-cmd": [
             "@php artisan package:discover",
             "@php artisan webDriver:install"
-        ],
-    },
+        ]
+    }
 }
