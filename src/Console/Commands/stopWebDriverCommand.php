@@ -1,11 +1,10 @@
 <?php
-
-namespace gpibarra\webDriverPHP\Console\Commands;
+namespace gpibarra\WebDriverPHP\Console\Commands;
 
 use gpibarra\WebDriverPHP\WebDriver;
 use Illuminate\Console\Command;
 
-class stopWebDriverCommand extends Command
+class StopWebDriverCommand extends Command
 {
     /**
      * The name and signature of the console command.
@@ -19,7 +18,7 @@ class stopWebDriverCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Stop WebDriver if is started';
 
     /**
      * Create a new command instance.

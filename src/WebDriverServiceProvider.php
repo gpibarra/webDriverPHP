@@ -1,6 +1,5 @@
 <?php
-
-namespace gpibarra\webDriverPHP;
+namespace gpibarra\WebDriverPHP;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -25,10 +24,10 @@ class WebDriverServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                Console\Commands\installWebDriverCommand::class,
-                Console\Commands\startWebDriverCommand::class,
-                Console\Commands\stopWebDriverCommand::class,
-                Console\Commands\updateWebDriverCommand::class
+                Console\Commands\InstallWebDriverCommand::class,
+                Console\Commands\StartWebDriverCommand::class,
+                Console\Commands\StopWebDriverCommand::class,
+                Console\Commands\UpdateWebDriverCommand::class
             ]);
         }
     }
