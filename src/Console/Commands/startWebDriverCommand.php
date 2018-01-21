@@ -1,6 +1,6 @@
 <?php
 
-namespace gpibarra\webDriverPHPConsole\Commands;
+namespace gpibarra\webDriverPHP\Console\Commands;
 
 use gpibarra\WebDriverPHP\WebDriver;
 use Illuminate\Console\Command;
