@@ -7,6 +7,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 
 
 class WebDriver {
+    static private $log = false;
     static private $port = '4444';
     static private $host = 'http://localhost:'.'4444'.'/wd/hub';
     static private $seleniumJavaBin = "selenium-server-standalone-3.7.1.jar";
@@ -27,7 +28,7 @@ class WebDriver {
 
 
     function __construct() {
-        echo "Creando Driver\n";
+        if (self::log) echo "Creando Driver\n";
         self::startServer();
         $this->desired_capabilities = DesiredCapabilities::chrome();
         $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
@@ -48,7 +49,7 @@ class WebDriver {
         $isSeleniumAlreadyRunning = false;
         $pidSeleniumAlreadyRunning = 0;
         if (self::isWindows()) {
-            echo "Chequeando Instancia existente (Windows)\n";
+            if (self::log) echo "Chequeando Instancia existente (Windows)\n";
             exec("wmic process where name=\"java.exe\" get ProcessID,commandline 2>&1",$output);
             foreach($output as $line)
             {
@@ -62,7 +63,7 @@ class WebDriver {
             }
         }
         else if (self::isLinux()) {
-            echo "Chequeando Instancia existente (Linux)\n";
+            if (self::log) echo "Chequeando Instancia existente (Linux)\n";
             exec("ps -C java -fwww",$output);
             foreach($output as $line)
             {
@@ -76,7 +77,7 @@ class WebDriver {
             }
         }
         else {
-            echo "SO no disponible";
+            if (self::log) echo "SO no disponible";
         }
         if ($pid) {
             return $pidSeleniumAlreadyRunning;
@@ -89,9 +90,9 @@ class WebDriver {
     public static function isFilesExists($folder, $pathSelenium, $pathChrome) {
         if (file_exists($folder)) {
             if (!is_dir($folder)) {
-                echo "Renombrando archivo $folder\n";
+                if (self::log) echo "Renombrando archivo $folder\n";
                 rename($folder,$folder."_");
-                echo "Creando carpeta $folder\n";
+                if (self::log) echo "Creando carpeta $folder\n";
                 mkdir($folder);
             }
             else {
@@ -99,7 +100,7 @@ class WebDriver {
             }
         }
         else {
-            echo "Creando carpeta $folder\n";
+            if (self::log) echo "Creando carpeta $folder\n";
             mkdir($folder);
         }
         //Selenium
@@ -108,7 +109,7 @@ class WebDriver {
             foreach ($files as $file) {
                 unlink($file);
             }
-            echo "Descargando Selenium ($pathSelenium)\n";
+            if (self::log) echo "Descargando Selenium ($pathSelenium)\n";
             $content = file_get_contents(self::$seleniumGET);
             file_put_contents($pathSelenium, $content);
             if (self::isLinux()) {
@@ -125,13 +126,13 @@ class WebDriver {
             $tmpURLChrome = "";
             $tmpFileZipChrome = "";
             if (self::isWindows()) {
-                echo "Descargando Chrome (Windows) [$pathChrome]\n";
+                if (self::log) echo "Descargando Chrome (Windows) [$pathChrome]\n";
                 $tmpURLChrome = self::$chromeWinx86GET;
                 $tmpFileZipChrome = str_replace(".exe",".zip",$pathChrome);
                 $blInstall = true;
             }
             else if (self::isLinux()) {
-                echo "Descargando Chrome (Linux) [$pathChrome]\n";
+                if (self::log) echo "Descargando Chrome (Linux) [$pathChrome]\n";
                 if (self::isx86()) {
                     $tmpURLChrome = self::$chromeLinx86GET;
                 }
@@ -142,7 +143,7 @@ class WebDriver {
                 $blInstall = true;
             }
             else {
-                echo "SO no disponible";
+                if (self::log) echo "SO no disponible";
             }
             if ($blInstall) {
                 $content = file_get_contents($tmpURLChrome);
@@ -237,25 +238,25 @@ class WebDriver {
                 //Execute in the background by sending output to NUL
                 if (self::isWindows()) {
                     $cmd = "java -jar -Dwebdriver.chrome.driver=".$pathChrome." ".$pathSelenium." -port ".self::$port." 2>&1>NUL";
-                    echo "Starting Java Server Selenium (Windows)\n";
+                    if (self::log) echo "Starting Java Server Selenium (Windows)\n";
                     //echo $cmd;
                     pclose(popen("start /B ". $cmd, "r"));
                     //exec("start /B ". $cmd);
                 }
                 else if (self::isLinux()) {
                     $cmd = "java -jar -Dwebdriver.chrome.driver=".$pathChrome." ".$pathSelenium." -port ".self::$port." > /dev/null 2>&1";
-                    echo "Starting Java Server Selenium (Linux)\n";
+                    if (self::log) echo "Starting Java Server Selenium (Linux)\n";
                     //echo $cmd."\n";
                     exec("nohup ".$cmd." &");
                 }
                 else {
-                    echo "SO no disponible";
+                    if (self::log) echo "SO no disponible";
                 }
                 sleep(5);
             }
         }
         else {
-            echo "Already Java Server Selenium\n";
+            if (self::log) echo "Already Java Server Selenium\n";
         }
     }
 
@@ -264,21 +265,21 @@ class WebDriver {
         if($pidSeleniumAlreadyRunning>0)
         {
             if (self::isWindows()) {
-                echo "Stopping Java Server Selenium (Windows)\n";
+                if (self::log) echo "Stopping Java Server Selenium (Windows)\n";
                 $cmd = "taskkill /F /PID ".$pidSeleniumAlreadyRunning." 2>&1>NUL";
                 exec($cmd);
             }
             else if (self::isLinux()) {
-                echo "Stopping Java Server Selenium (Linux)\n";
+                if (self::log) echo "Stopping Java Server Selenium (Linux)\n";
                 $cmd = "kill -9 ".$pidSeleniumAlreadyRunning." > /dev/null 2>&1";
                 exec($cmd);
             }
             else {
-                echo "SO no disponible";
+                if (self::log) echo "SO no disponible";
             }
         }
         else {
-            echo "No Java Server Selenium started\n";
+            if (self::log) echo "No Java Server Selenium started\n";
         }
     }
 

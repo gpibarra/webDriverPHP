@@ -11,5 +11,18 @@
     },
     "require": {
         "facebook/webdriver": "^1.5"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "gpibarra\\WebDriverPHP\\WebDriverServiceProvider"
+            ]
+        }
     }
+    "scripts": {
+        "post-install-cmd": [
+            "@php artisan package:discover",
+            "@php artisan webDriver:install"
+        ],
+    },
 }
