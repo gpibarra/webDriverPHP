@@ -27,7 +27,8 @@ class WebDriverServiceProvider extends ServiceProvider
                 Console\Commands\InstallWebDriverCommand::class,
                 Console\Commands\StartWebDriverCommand::class,
                 Console\Commands\StopWebDriverCommand::class,
-                Console\Commands\UpdateWebDriverCommand::class
+                Console\Commands\UpdateWebDriverCommand::class,
+                Console\Commands\StatusWebDriverCommand::class
             ]);
         }
     }

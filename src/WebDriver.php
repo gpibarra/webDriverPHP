@@ -4,7 +4,7 @@ namespace gpibarra\WebDriverPHP;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
-
+use Facebook\WebDriver\Exception\NoSuchWindowException;
 
 class WebDriver {
     static private $log = false;
@@ -24,21 +24,73 @@ class WebDriver {
     ////sudo apt-get -f install -y
     //https://gist.github.com/ziadoz/3e8ab7e944d02fe872c3454d17af31a5
     public $driver;
+    private $blPersistent = false;
     private $blDeamon = false;
+    static private $relativeStorageWebDriversDir = '/../storage/webdrivers';
+    static private $relativeStorageSessionsDir = '/../storage/sessions';
+    static private $storageSessionsFilename = 'session_file.txt';
 
 
-    function __construct() {
-        if (self::runningInConsole()) echo "Creando Driver\n";
-        self::startServer();
-        $this->desired_capabilities = DesiredCapabilities::chrome();
-        $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+    function __construct($blPersistent = false) {
+        $this->blPersistent = $blPersistent;
+        if (!$this->blPersistent) {
+            if (self::runningInConsole()) echo "Creando Driver\n";
+            self::startServer();
+            $this->desired_capabilities = DesiredCapabilities::chrome();
+            $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+        }
+        else {
+            $folderSession = __DIR__.self::$relativeStorageSessionsDir;
+            if (file_exists($folderSession.'/'.self::$storageSessionsFilename)) {
+                if (self::runningInConsole()) echo "Restaurando sesion\n";
+                self::startServer();
+                try {
+                    $dataSaved = unserialize(file_get_contents($folderSession.'/'.self::$storageSessionsFilename));
+                    $this->driver = RemoteWebDriver::createBySessionID($dataSaved['sessionID']);
+                    $url = $this->driver->getCurrentURL();
+                }
+//                catch (NoSuchWindowException $e) {
+                catch (\Exception $e) {
+                    $this->desired_capabilities = DesiredCapabilities::chrome();
+                    $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+                }
+            }
+            else {
+                if (self::runningInConsole()) echo "Creando Driver\n";
+                self::startServer();
+                $this->desired_capabilities = DesiredCapabilities::chrome();
+                $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+            }
+        }
     }
 
     function __destruct() {
-        $this->driver->quit();
-        if (!$this->blDeamon) {
-            self::stopServer();
+        if (!$this->blPersistent) {
+            $this->driver->quit();
+            if (!$this->blDeamon) {
+                self::stopServer();
+            }
         }
+        else {
+            $folderSession = __DIR__.self::$relativeStorageSessionsDir;
+            if (file_exists($folderSession)) {
+                if (!is_dir($folderSession)) {
+                    if (self::runningInConsole()) echo "Renombrando archivo $folderSession\n";
+                    rename($folderSession,$folderSession."_");
+                    if (self::runningInConsole()) echo "Creando carpeta $folderSession\n";
+                    mkdir($folderSession);
+                }
+            }
+            else {
+                mkdir($folderSession);
+            }
+
+            file_put_contents($folderSession.'/'.self::$storageSessionsFilename,serialize(['sessionID' => $this->driver->getSessionID()]));
+        }
+    }
+
+    public function setPersistent($bl) {
+        $this->blPersistent = $bl;
     }
 
     public function setDeamon($bl) {
@@ -204,7 +256,7 @@ class WebDriver {
 
     public static function updateServer() {
         self::stopServer();
-        $pathBin = __DIR__.'/../storage/webdrivers';
+        $pathBin = __DIR__.self::$relativeStorageWebDriversDir;
         $pathSelenium = $pathBin."/".self::$seleniumJavaBin;
         if (self::isWindows()) {
             $pathChrome = $pathBin."/".self::$chromeExeWinBin;
@@ -219,7 +271,7 @@ class WebDriver {
     public static function startServer() {
         $isSeleniumAlreadyRunning = self::isStartedServer();
         if(!$isSeleniumAlreadyRunning) {
-            $pathBin = __DIR__.'/../storage/webdrivers';
+            $pathBin = __DIR__.self::$relativeStorageWebDriversDir;
             $pathSelenium = $pathBin."/".self::$seleniumJavaBin;
             if (self::isWindows()) {
                 $pathChrome = $pathBin."/".self::$chromeExeWinBin;
@@ -280,6 +332,37 @@ class WebDriver {
         }
         else {
             if (self::runningInConsole()) echo "No Java Server Selenium started\n";
+        }
+    }
+
+    public static function statusServer() {
+        if (self::runningInConsole()) {
+            if (self::isStartedServer()) {
+                echo "WebDriver is started!\n";
+            }
+            else  {
+                echo "WebDriver is stopped!\n";
+            }
+        }
+    }
+
+    public static function checkPersistence() {
+        if (!self::isStartedServer()) {
+            return false;
+        }
+        $folderSession = __DIR__.self::$relativeStorageSessionsDir;
+        if (!file_exists($folderSession.'/'.self::$storageSessionsFilename)) {
+            return false;
+        }
+        try {
+            $dataSaved = unserialize(file_get_contents($folderSession.'/'.self::$storageSessionsFilename));
+            $tmpDriver = RemoteWebDriver::createBySessionID($dataSaved['sessionID']);
+            $url = $tmpDriver->getCurrentURL();
+            return true;
+        }
+//        catch (NoSuchWindowException $e) {
+        catch (\Exception $e) {
+            return false;
         }
     }
 

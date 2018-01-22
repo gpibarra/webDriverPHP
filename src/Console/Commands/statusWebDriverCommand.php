@@ -4,21 +4,21 @@ namespace gpibarra\WebDriverPHP\Console\Commands;
 use gpibarra\WebDriverPHP\WebDriver;
 use Illuminate\Console\Command;
 
-class StopWebDriverCommand extends Command
+class StatusWebDriverCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'webDriver:stop';
+    protected $signature = 'webDriver:status';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Stop WebDriver if is started';
+    protected $description = 'View status WebDriver';
 
     /**
      * Create a new command instance.
@@ -38,6 +38,6 @@ class StopWebDriverCommand extends Command
     public function handle()
     {
         //
-        WebDriver::stopServer();
+        WebDriver::statusServer();
     }
 }
