@@ -10,13 +10,13 @@ class WebDriver {
     static private $log = false;
     static private $port = '4444';
     static private $host = 'http://localhost:'.'4444'.'/wd/hub';
-    static private $seleniumJavaBin = "selenium-server-standalone-3.7.1.jar";
+    static private $seleniumJavaBin = "selenium-server-standalone-3.9.1.jar";
     static private $chromeExeWinBin = "chromedriver.exe";
     static private $chromeExeLinBin = "chromedriver";
-    static private $seleniumGET = "http://selenium-release.storage.googleapis.com/3.7/selenium-server-standalone-3.7.1.jar";
-    static private $chromeWinx64GET = "https://chromedriver.storage.googleapis.com/2.33/chromedriver_win32.zip";
-    static private $chromeWinx86GET = "https://chromedriver.storage.googleapis.com/2.33/chromedriver_win32.zip";
-    static private $chromeLinx64GET = "https://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip";
+    static private $seleniumGET = "http://selenium-release.storage.googleapis.com/3.9/selenium-server-standalone-3.9.1.jar";
+    static private $chromeWinx64GET = "https://chromedriver.storage.googleapis.com/2.38/chromedriver_win32.zip";
+    static private $chromeWinx86GET = "https://chromedriver.storage.googleapis.com/2.38/chromedriver_win32.zip";
+    static private $chromeLinx64GET = "https://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip";
     //Chrome x86 decreapted - lastversion 48
     static private $chromeLinx86GET = "https://chromedriver.storage.googleapis.com/2.20/chromedriver_linux86.zip";
     ////wget -N https://archive.org/download/google-chrome-stable_48.0.2564.116-1_i386/google-chrome-stable_48.0.2564.116-1_i386.deb -P ~/
@@ -29,15 +29,15 @@ class WebDriver {
     static private $relativeStorageWebDriversDir = '/../storage/webdrivers';
     static private $relativeStorageSessionsDir = '/../storage/sessions';
     static private $storageSessionsFilename = 'session_file.txt';
+    static private $relativeStorageCookiesDir = '/../storage/sessions';
+    static private $storageCookiesFilename = 'cookies_file.txt';
 
 
     function __construct($blPersistent = false) {
         $this->blPersistent = $blPersistent;
         if (!$this->blPersistent) {
             if (self::runningInConsole()) echo "Creando Driver\n";
-            self::startServer();
-            $this->desired_capabilities = DesiredCapabilities::chrome();
-            $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+            $this->initWD();
         }
         else {
             $folderSession = __DIR__.self::$relativeStorageSessionsDir;
@@ -51,15 +51,16 @@ class WebDriver {
                 }
 //                catch (NoSuchWindowException $e) {
                 catch (\Exception $e) {
-                    $this->desired_capabilities = DesiredCapabilities::chrome();
-                    $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+                    if (!file_exists($folderSession.'/'.self::$storageSessionsFilename)) {
+                        unlink($folderSession.'/'.self::$storageSessionsFilename);
+                    }
+                    $this->initWD();
                 }
             }
             else {
                 if (self::runningInConsole()) echo "Creando Driver\n";
-                self::startServer();
-                $this->desired_capabilities = DesiredCapabilities::chrome();
-                $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
+                $this->initWD();
+                //$this->loadCookies();
             }
         }
     }
@@ -72,21 +73,15 @@ class WebDriver {
             }
         }
         else {
-            $folderSession = __DIR__.self::$relativeStorageSessionsDir;
-            if (file_exists($folderSession)) {
-                if (!is_dir($folderSession)) {
-                    if (self::runningInConsole()) echo "Renombrando archivo $folderSession\n";
-                    rename($folderSession,$folderSession."_");
-                    if (self::runningInConsole()) echo "Creando carpeta $folderSession\n";
-                    mkdir($folderSession);
-                }
-            }
-            else {
-                mkdir($folderSession);
-            }
-
-            file_put_contents($folderSession.'/'.self::$storageSessionsFilename,serialize(['sessionID' => $this->driver->getSessionID()]));
+            $this->saveSessionWd();
+            //$this->saveCookies();
         }
+    }
+
+    private function initWD() {
+        self::startServer();
+        $this->desired_capabilities = DesiredCapabilities::chrome();
+        $this->driver = RemoteWebDriver::create(self::$host, $this->desired_capabilities);
     }
 
     public function setPersistent($bl) {
@@ -140,18 +135,7 @@ class WebDriver {
     }
 
     public static function isFilesExists($folder, $pathSelenium, $pathChrome) {
-        if (file_exists($folder)) {
-            if (!is_dir($folder)) {
-                if (self::runningInConsole()) echo "Renombrando archivo $folder\n";
-                rename($folder,$folder."_");
-                if (self::runningInConsole()) echo "Creando carpeta $folder\n";
-                mkdir($folder);
-            }
-            else {
-                //OK
-            }
-        }
-        else {
+        if (!self::checkExistDirectory($folder)) {
             if (self::runningInConsole()) echo "Creando carpeta $folder\n";
             mkdir($folder);
         }
@@ -220,16 +204,6 @@ class WebDriver {
     }
 
     public static function deleteFiles($folder, $pathSelenium, $pathChrome) {
-        //Selenium
-        /*
-        if (file_exists($pathSelenium)) {
-            unlink($pathSelenium);
-        }
-        //ChromeDriver
-        if (file_exists($pathChrome)) {
-            unlink($pathChrome);
-        }
-        */
         self::deleteDir($folder);
     }
 
@@ -283,7 +257,6 @@ class WebDriver {
                 $pathChrome = $pathBin."/".self::$chromeExeLinBin;
             }
 
-
             $isSeleniumFilesExists = self::isFilesExists($pathBin, $pathSelenium, $pathChrome);
             if ($isSeleniumFilesExists) {
                 $cmd = "";
@@ -333,6 +306,8 @@ class WebDriver {
         else {
             if (self::runningInConsole()) echo "No Java Server Selenium started\n";
         }
+        //cerrar chromedriver
+
     }
 
     public static function statusServer() {
@@ -362,12 +337,45 @@ class WebDriver {
         }
 //        catch (NoSuchWindowException $e) {
         catch (\Exception $e) {
+            if (!file_exists($folderSession.'/'.self::$storageSessionsFilename)) {
+                unlink($folderSession.'/'.self::$storageSessionsFilename);
+            }
             return false;
+        }
+    }
+    private function saveSessionWd() {
+        $folderSession = __DIR__.self::$relativeStorageSessionsDir;
+        if (!self::checkExistDirectory($folderSession)) {
+            if (self::runningInConsole()) echo "Creando carpeta $folderSession\n";
+            mkdir($folderSession);
+        }
+        file_put_contents($folderSession.'/'.self::$storageSessionsFilename,serialize(['sessionID' => $this->driver->getSessionID()]));
+    }
+    public function saveCookies() {
+        $folderCookies = __DIR__.self::$relativeStorageCookiesDir;
+        if (!self::checkExistDirectory($folderCookies)) {
+            if (self::runningInConsole()) echo "Creando carpeta $foldefolderCookiesSession\n";
+            mkdir($folderCookies);
+        }
+        file_put_contents($folderCookies.'/'.self::$storageCookiesFilename, serialize($this->driver->manage()->getCookies()));
+    }
+    public function loadCookies() {
+        $folderCookies = __DIR__.self::$relativeStorageCookiesDir;
+        if (file_exists($folderCookies.'/'.self::$storageCookiesFilename)) {
+            $cookies = unserialize(file_get_contents($folderCookies.'/'.self::$storageCookiesFilename));
+            foreach ($cookies as $key => $cookie) {
+                $this->driver->manage()->addCookie($cookie);
+            }
         }
     }
 
     private static function runningInConsole() {
-        return \App::runningInConsole();
+        try {
+            return app()->runningInConsole();
+        }
+        catch (\Exception $e) {
+            return false;
+        }
     }
 
     private static function isx86() {
@@ -379,6 +387,22 @@ class WebDriver {
     }
     private static function isLinux() {
         return (substr(php_uname(), 0, 5) == "Linux");
+    }
+
+    static private function checkExistDirectory($folder) {
+        if (file_exists($folder)) {
+            if (is_dir($folder)) {
+                return true;
+            }
+            else {
+                if (self::runningInConsole()) echo "Renombrando archivo $folder\n";
+                rename($folder,$folder."_");
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
     }
 
 }
